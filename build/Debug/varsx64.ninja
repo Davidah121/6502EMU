@@ -1,0 +1,5 @@
+inc = -I ./include %WLIBPATH64% -I C:/Libraries/_MyLibraries/nGLIB3/include
+objDir = ./bin/Debug/x64/obj
+compiler = cmd /c clang
+CXXFLAGS = -std=c++17
+compilerFlags = -c -g $CXXFLAGS -Wno-unused-command-line-argument

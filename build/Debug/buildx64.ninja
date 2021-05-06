@@ -1,0 +1,15 @@
+# Include variables for this build
+include ./build/Debug/varsx64.ninja
+
+## for getting object files
+## This also gets dependencies
+rule buildToObject
+   command = $compiler $compilerFlags $inc $in -o $out -MMD -MF $out.d
+   depfile = $out.d
+   deps = gcc
+
+## build all of the objects and the executable
+build $objDir/6502Emu.o: buildToObject src/6502Emu.cpp
+build $objDir/CPU.o: buildToObject src/CPU.cpp
+build $objDir/CPU_Opcodes.o: buildToObject src/CPU_Opcodes.cpp
+build $objDir/Memory.o: buildToObject src/Memory.cpp

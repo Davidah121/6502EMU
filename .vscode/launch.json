@@ -1,0 +1,27 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug Launch x64",
+			"type": "lldb",
+			"request": "launch",
+			"program": "${workspaceFolder}/bin/Debug/x64/output.exe",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"terminal": "external"
+		},
+		{
+			"name": "Release Launch x64",
+			"type": "lldb",
+			"request": "launch",
+			"program": "${workspaceFolder}/bin/Release/x64/output.exe",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"terminal": "external"
+		}
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"configurations": [
+		{
+			"name": "Clang LLVM",
+			"includePath": [
+				"${workspaceFolder}/include/*",
+				"C:/Libraries/_MyLibraries/nGLIB3/include/*"
+			],
+			"defines": [
+				"_DEBUG",
+				"UNICODE",
+				"_UNICODE"
+			],
+			"windowsSdkVersion": "10.0.19041.0",
+			"cStandard": "c11",
+			"intelliSenseMode": "clang-x64",
+			"cppStandard": "c++17"
+		}
+	],
+	"version": 4
+}
