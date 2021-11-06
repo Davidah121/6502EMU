@@ -13,15 +13,13 @@ public:
     void setDataPool(int select);
     int getDataPool();
 
-    void reset();
-
     int getSize();
 
     unsigned char* getDataPointer(int dataPool);
 
 private:
     std::vector<unsigned char*> dataPools;
-    const int size = 0x10000;
-    const int pageSize = 0x100;
+    const int size = 0xFFFF;
+    const int pageSize = 0xFF;
     int currentPool = 0;
 };
