@@ -22,6 +22,15 @@ Memory::~Memory()
     dataPools.clear();
 }
 
+void Memory::reset()
+{
+    for(int i=0; i<dataPools.size(); i++)
+    {
+        dataPools[i] = new unsigned char[size];
+        std::memset(dataPools[i], 0, size);
+    }
+}
+
 unsigned char& Memory::getMemory(unsigned short location)
 {
     return dataPools[currentPool][location];
