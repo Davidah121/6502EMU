@@ -20,6 +20,8 @@
         "tuple": "cpp",
         "utility": "cpp",
         "xmemory": "cpp",
-        "xstddef": "cpp"
+        "xstddef": "cpp",
+        "xstring": "cpp",
+        "functional": "cpp"
     }
 }
