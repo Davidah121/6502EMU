@@ -1,4 +1,5 @@
 #pragma once
+#include "StringTools.h"
 #include "Memory.h"
 
 #define CLOCK_SPEED 1789773 //Measured in Hz. 1.789773 MHz
@@ -12,10 +13,11 @@ typedef unsigned char byte;
     CPU maintains its previous and next tick so it can wait accordingly.
 */
 
-struct instructionInfo
+struct InstructionInfo
 {
-    int bytes = 0;
+    int additionalBytes = 0;
     int cycles = 0;
+    std::string syntax = "";
 };
 
 class CPU
@@ -25,7 +27,7 @@ public:
     ~CPU();
 
     //processor instructions with bytes and cycles
-    static instructionInfo OpCodes[256];
+    static InstructionInfo OpCodes[256];
 
     void step();
     bool getFinished();
@@ -43,6 +45,8 @@ public:
     void requestInterupt();
     void requestManditoryInterupt();
     void requestReset();
+
+    std::string getNextInstructionAsString();
 
 private:
     
@@ -156,5 +160,5 @@ private:
 
     bool finished = false;
 
-    Memory* mem;
+    Memory* mem = nullptr;
 };

@@ -1,4 +1,4 @@
-inc = -I ./include %WLIBPATH64% -I C:/Libraries/_MyLibraries/nGLIB3/include
+inc = -I ./include %WLIBPATH64%
 objDir = ./bin/Debug/x64/obj
 compiler = cmd /c clang
 CXXFLAGS = -std=c++17

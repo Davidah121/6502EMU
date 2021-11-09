@@ -32,6 +32,15 @@ void Memory::setMemory(unsigned short location, unsigned char value)
     dataPools[currentPool][location] = value;
 }
 
+void Memory::reset()
+{
+    for(int i=0; i<dataPools.size(); i++)
+    {
+        dataPools[i] = new unsigned char[size];
+        std::memset(dataPools[i], 0, size);
+    }
+}
+
 unsigned char* Memory::getDataPointer(int pool)
 {
     return dataPools[pool];
