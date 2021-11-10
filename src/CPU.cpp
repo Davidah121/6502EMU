@@ -74,6 +74,13 @@ void CPU::requestReset()
     doReset = true;
 }
 
+void CPU::hardReset()
+{
+    reset();
+    cyclesJustUsed = 0;
+    totalCyclesUsed = 0;
+}
+
 unsigned short CPU::getPC()
 {
     return PC;
@@ -955,10 +962,17 @@ void CPU::BCC(byte value, int* cycles)
         if(cycles!=nullptr)
             (*cycles)++;
 
-        unsigned short location = PC+2;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
-        location += (char)value;
+        
+        //relative mode so get first byte as unsigned char and add value
+        //must have overflow
+        byte locationSubByte = location & 0xFF;
+        locationSubByte += value;
+
+        location = (location & 0xFF00) + locationSubByte;
+
         int nPageNum = location/256;
         //changed page number
         if(nPageNum!=pageNum && cycles!=nullptr)
@@ -975,7 +989,7 @@ void CPU::BCS(byte value, int* cycles)
         if(cycles!=nullptr)
             (*cycles)++;
         
-        unsigned short location = PC+2;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
         location += (char)value;
@@ -1024,7 +1038,7 @@ void CPU::BMI(byte value, int* cycles)
         if(cycles!=nullptr)
             (*cycles)++;
         
-        unsigned short location = PC;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
         location += (char)value;
@@ -1033,7 +1047,7 @@ void CPU::BMI(byte value, int* cycles)
         if(nPageNum!=pageNum && cycles!=nullptr)
             (*cycles)++;
 
-        PC = location;
+        PC = location-1;
     }
 }
 
@@ -1044,7 +1058,7 @@ void CPU::BNE(byte value, int* cycles)
         if(cycles!=nullptr)
             (*cycles)++;
         
-        unsigned short location = PC;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
         location += (char)value;
@@ -1053,7 +1067,7 @@ void CPU::BNE(byte value, int* cycles)
         if(nPageNum!=pageNum && cycles!=nullptr)
             (*cycles)++;
 
-        PC = location;
+        PC = location-1;
     }
 }
 
@@ -1064,7 +1078,7 @@ void CPU::BPL(byte value, int* cycles)
         if(cycles!=nullptr)
             (*cycles)++;
         
-        unsigned short location = PC;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
         location += (char)value;
@@ -1073,18 +1087,13 @@ void CPU::BPL(byte value, int* cycles)
         if(nPageNum!=pageNum && cycles!=nullptr)
             (*cycles)++;
 
-        PC = location;
+        PC = location-1;
     }
 }
 
 void CPU::BRK()
 {
-    unsigned short IRQ = 0xFFFE;
-    unsigned short jmpLocation = mem->getMemory(IRQ);
-    jmpLocation = (jmpLocation<<8) + mem->getMemory(IRQ+1);
-
-    JMP(jmpLocation);
-    PHP();
+    interupt();
     bFlag = true;
     finished = true;
 }

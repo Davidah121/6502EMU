@@ -1,0 +1,11 @@
+;Sets data from memory location 0 - 20 to values 0 - 20
+
+LDA #$00
+LDX #$00
+
+L0: ;start of loop
+TXA
+STA $00,X
+INX 
+CMP #20
+BCC L0

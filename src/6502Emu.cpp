@@ -164,7 +164,7 @@ void mem_view(Memory* mem)
     }
 }
 
-void run(bool debugMode)
+void run()
 {
     Memory k = Memory(1);
 
@@ -180,81 +180,79 @@ void run(bool debugMode)
         return;
     }
 
-    if(!debugMode)
+
+    while(true)
     {
-        while(!cpu.getFinished())
+        StringTools::println("totalCycles: %d \t lastCycles: %d", cpu.getTotalCyclesUsed(), cpu.getCyclesJustUsed());
+        StringTools::println("PC: %x \t SP: %x", cpu.getPC(), cpu.getSP());
+        StringTools::println("A: %x \t X: %x \t Y: %x", cpu.getA(), cpu.getX(), cpu.getY());
+        StringTools::println("Flags: NV-BDIZC");
+        StringTools::println("       %s", StringTools::toBinaryString(cpu.getCPUFlags(), 8));
+
+        StringTools::println("");
+        StringTools::println("Next Instruction: %s", cpu.getNextInstructionAsString().c_str());
+        
+        StringTools::print("Enter Commands: ");
+        std::string command = StringTools::getString();
+
+        if(command == "help")
         {
-            cpu.step();
+            system("start help.txt");
         }
-    }
-    else
-    {
-        while(true)
+        else if(command == "step")
         {
-            StringTools::println("totalCycles: %d \t lastCycles: %d", cpu.getTotalCyclesUsed(), cpu.getCyclesJustUsed());
-            StringTools::println("PC: %x \t SP: %x", cpu.getPC(), cpu.getSP());
-            StringTools::println("A: %x \t X: %x \t Y: %x", cpu.getA(), cpu.getX(), cpu.getY());
-            StringTools::println("Flags: NV-BDIZC");
-            StringTools::println("       %s", StringTools::toBinaryString(cpu.getCPUFlags(), 8));
-
-            StringTools::println("");
-            StringTools::println("Next Instruction: %s", cpu.getNextInstructionAsString().c_str());
-            
-            StringTools::print("Enter Commands: ");
-            std::string command = StringTools::getString();
-
-            if(command == "help")
-            {
-                system("start help.txt");
-            }
-            else if(command == "step")
-            {
-                if(!cpu.getFinished())
-                    cpu.step();
-                else
-                    StringTools::println("Program can no longer be executed.");
-            }
-            else if(command == "run")
-            {
-                while(!cpu.getFinished())
-                {
-                    cpu.step();
-                }
-                StringTools::println("Program finished execution");
-                system("pause");
-            }
-            else if(command == "end")
-            {
-                StringTools::println("Ending Execution");
-                break;
-            }
-            else if(command == "mem_dump")
-            {
-                StringTools::println("Dumping memory to file mem_dump");
-                mem_dump(&k);
-                system("pause");
-            }
-            else if(command == "mem_view")
-            {
-                mem_view(&k);
-                system("pause");
-            }
-            else if(command == "irq")
-            {
-                cpu.requestInterupt();
-            }
-            else if(command == "nmi")
-            {
-                cpu.requestManditoryInterupt();
-            }
-            else if(command == "reset")
-            {
-                cpu.requestReset();
-            }
-
-            StringTools::clearConsole(true);
+            if(!cpu.getFinished())
+                cpu.step();
+            else
+                StringTools::println("Program can no longer be executed.");
         }
+        else if(command == "run")
+        {
+            while(!cpu.getFinished())
+            {
+                cpu.step();
+            }
+            StringTools::println("Program finished execution");
+            system("pause");
+        }
+        else if(command == "end")
+        {
+            StringTools::println("Ending Execution");
+            break;
+        }
+        else if(command == "mem_dump")
+        {
+            StringTools::println("Dumping memory to file mem_dump");
+            mem_dump(&k);
+            system("pause");
+        }
+        else if(command == "mem_view")
+        {
+            mem_view(&k);
+            system("pause");
+        }
+        else if(command == "irq")
+        {
+            cpu.requestInterupt();
+        }
+        else if(command == "nmi")
+        {
+            cpu.requestManditoryInterupt();
+        }
+        else if(command == "reset")
+        {
+            cpu.requestReset();
+        }
+        else if(command == "hard_reset")
+        {
+            k.reset();
+            loadInstructionsIntoMemory(&k);
+            cpu.hardReset();
+        }
+
+        StringTools::clearConsole(true);
     }
+    
 }
 
 int main(int argc, char** argv)
@@ -307,7 +305,7 @@ int main(int argc, char** argv)
             {
                 inputInstructions = inputFile;
             }
-            run(true);
+            run();
         }
         else
         {
@@ -331,7 +329,7 @@ int main(int argc, char** argv)
     else
     {
         //attempt to run with default settings
-        run(true);
+        run();
     }
     return 0;
 }

@@ -46,6 +46,8 @@ public:
     void requestManditoryInterupt();
     void requestReset();
 
+    void hardReset();
+
     std::string getNextInstructionAsString();
 
 private:

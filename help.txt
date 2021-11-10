@@ -79,7 +79,8 @@ mem_dump 	Dumps all of the memory to a file called mem_dump.
 mem_view	Prints the value(s) of memory at a location or range of locations.
 irq		Sends an interupt to the cpu.
 nmi		Sends a manditory interupt to the cpu.
-reset		Sends a reset to the cpu.
+reset		Sends a reset to the cpu. Does not reset the total number of cycles used.
+hard_reset	Resets both the cpu and memory and reloads the instructions. Resets the total cycles.
 
 After every command, the command prompt is cleared.
 
