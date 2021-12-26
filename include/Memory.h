@@ -9,7 +9,8 @@ public:
 
     unsigned char& getMemory(unsigned short location);
     void setMemory(unsigned short location, unsigned char value);
-
+    void reset();
+    
     void setDataPool(int select);
     int getDataPool();
 

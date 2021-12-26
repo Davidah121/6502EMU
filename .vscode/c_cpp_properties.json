@@ -3,8 +3,7 @@
 		{
 			"name": "Clang LLVM",
 			"includePath": [
-				"${workspaceFolder}/include/*",
-				"C:/Libraries/_MyLibraries/nGLIB3/include/*"
+				"${workspaceFolder}/include/*"
 			],
 			"defines": [
 				"_DEBUG",

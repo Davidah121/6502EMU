@@ -1,277 +1,279 @@
 #include "CPU.h"
 
-//Note that {0,0} means null in this case. It is an operation with no information or illegal
-instructionInfo CPU::OpCodes[256] = {
-    {2,7}, //$00 : BRK
-    {2,6}, //$01 : ORA
-    {1,2}, //$02 : KIL
-    {2,8}, //$03 : SLO
-    {2,3}, //$04 : NOP
-    {2,3}, //$05 : ORA
-    {2,5}, //$06 : ASL
-    {2,5}, //$07 : SLO
-    {1,3}, //$08 : PHP
-    {2,2}, //$09 : ORA
-    {1,2}, //$0A : ASL
-    {2,2}, //$0B : ANC
-    {3,4}, //$0C : NOP
-    {3,4}, //$0D : ORA
-    {3,6}, //$0E : ASL
-    {3,6}, //$0F : SLO
+//Note that {0,0,"INVALID"} means null in this case. It is an operation with no information or illegal
+//Even though the operations do work and are used in certain applications, the emulator will consider them all invalid
 
-    {2,2}, //$10 : BPL
-    {2,5}, //$11 : ORA
-    {1,2}, //$12 : KIL
-    {2,8}, //$13 : SLO
-    {2,4}, //$14 : NOP
-    {2,4}, //$15 : ORA
-    {2,6}, //$16 : ASL
-    {2,6}, //$17 : SLO
-    {1,2}, //$18 : CLC
-    {3,4}, //$19 : ORA
-    {1,2}, //$1A : NOP
-    {3,7}, //$1B : SLO
-    {3,4}, //$1C : NOP
-    {3,4}, //$1D : ORA
-    {3,7}, //$1E : ASL
-    {3,7}, //$1F : SLO
+InstructionInfo CPU::OpCodes[256] = {
+    {0,7,"BRK"},            //$00 : BRK
+    {1,6,"ORA ($%02x,X)"},    //$01 : ORA
+    {0,0,"INVALID"},        //$02 : KIL
+    {0,0,"INVALID"},        //$03 : SLO
+    {0,0,"INVALID"},        //$04 : NOP
+    {1,3,"ORA $%02x"},        //$05 : ORA
+    {1,5,"ASL $%02x"},        //$06 : ASL
+    {0,0,"INVALID"},        //$07 : SLO
+    {0,3,"PHP"},            //$08 : PHP
+    {1,2,"ORA #$%02x"},       //$09 : ORA
+    {0,2,"ASL A"},          //$0A : ASL
+    {0,0,"INVALID"},        //$0B : ANC
+    {0,0,"INVALID"},        //$0C : NOP
+    {2,4,"ORA $%02x%02x"},      //$0D : ORA
+    {2,6,"ASL $%02x%02x"},      //$0E : ASL
+    {0,0,"INVALID"},        //$0F : SLO
 
-    {3,6}, //$20 : JSR
-    {2,6}, //$21 : AND
-    {0,0}, //$22 : KIL
-    {0,8}, //$23 : RLA
-    {2,3}, //$24 : BIT
-    {2,3}, //$25 : AND
-    {2,5}, //$26 : ROL
-    {0,5}, //$27 : RLA
-    {1,4}, //$28 : PLP
-    {2,2}, //$29 : AND
-    {1,2}, //$2A : ROL
-    {0,2}, //$2B : ANC
-    {3,4}, //$2C : BIT
-    {3,4}, //$2D : AND
-    {3,6}, //$2E : ROL
-    {0,6}, //$2F : RLA
+    {1,2,"BPL %02x"},         //$10 : BPL
+    {1,5,"ORA ($%02x),Y"},    //$11 : ORA
+    {0,0,"INVALID"},        //$12 : KIL
+    {0,0,"INVALID"},        //$13 : SLO
+    {0,0,"INVALID"},        //$14 : NOP
+    {1,4,"ORA $%02x,X"},      //$15 : ORA
+    {1,6,"ASL $%02x,X"},      //$16 : ASL
+    {0,0,"INVALID"},        //$17 : SLO
+    {0,2,"CLC"},            //$18 : CLC
+    {2,4,"ORA $%02x%02x,Y"},    //$19 : ORA
+    {0,0,"INVALID"},        //$1A : NOP
+    {0,0,"INVALID"},        //$1B : SLO
+    {0,0,"INVALID"},        //$1C : NOP
+    {2,4,"ORA $%02x%02x,X"},    //$1D : ORA
+    {2,7,"ASL $%02x%02x,X"},    //$1E : ASL
+    {0,0,"INVALID"},        //$1F : SLO
 
-    {2,2}, //$30 : BMI
-    {2,5}, //$31 : AND
-    {0,0}, //$32 : KIL
-    {0,8}, //$33 : RLA
-    {0,4}, //$34 : NOP
-    {2,4}, //$35 : AND
-    {2,6}, //$36 : ROL
-    {0,6}, //$37 : RLA
-    {1,2}, //$38 : SEC
-    {3,4}, //$39 : AND
-    {0,2}, //$3A : NOP
-    {0,7}, //$3B : RLA
-    {0,4}, //$3C : NOP
-    {3,4}, //$3D : AND
-    {3,7}, //$3E : ROL
-    {0,7}, //$3F : RLA
+    {2,6,"JSR $%02x%02x"},      //$20 : JSR
+    {1,6,"AND $%02x%02x,X"},    //$21 : AND
+    {0,0,"INVALID"},        //$22 : KIL
+    {0,0,"INVALID"},        //$23 : RLA
+    {1,3,"BIT $%02x"},        //$24 : BIT
+    {1,3,"AND $%02x"},        //$25 : AND
+    {1,5,"ROL $%02x"},        //$26 : ROL
+    {0,0,"INVALID"},        //$27 : RLA
+    {0,4,"PLP"},            //$28 : PLP
+    {1,2,"AND #$%02x"},       //$29 : AND
+    {0,2,"ROL A"},          //$2A : ROL
+    {0,0,"INVALID"},        //$2B : ANC
+    {2,4,"BIT $%02x%02x"},      //$2C : BIT
+    {2,4,"AND $%02x%02x"},      //$2D : AND
+    {2,6,"ROL $%02x%02x"},      //$2E : ROL
+    {0,0,"INVALID"},        //$2F : RLA
 
-    {1,6}, //$40 : RTI
-    {2,6}, //$41 : EOR
-    {0,0}, //$42 : KIL
-    {0,8}, //$43 : SRE
-    {0,3}, //$44 : NOP
-    {2,3}, //$45 : EOR
-    {2,5}, //$46 : LSR
-    {0,5}, //$47 : SRE
-    {1,3}, //$48 : PHA
-    {2,2}, //$49 : EOR
-    {1,2}, //$4A : LSR
-    {0,2}, //$4B : ALR
-    {3,3}, //$4C : JMP
-    {3,4}, //$4D : EOR
-    {3,6}, //$4E : LSR
-    {0,6}, //$4F : SRE
+    {1,2,"BMI %02x"},         //$30 : BMI
+    {1,5,"AND ($%02x),Y"},    //$31 : AND
+    {0,0,"INVALID"},        //$32 : KIL
+    {0,0,"INVALID"},        //$33 : RLA
+    {0,0,"INVALID"},        //$34 : NOP
+    {1,4,"AND $%02x,X"},      //$35 : AND
+    {1,6,"ROL $%02x,X"},      //$36 : ROL
+    {0,0,"INVALID"},        //$37 : RLA
+    {0,2,"SEC"},            //$38 : SEC
+    {2,4,"AND $%02x%02x,Y"},    //$39 : AND
+    {0,0,"INVALID"},        //$3A : NOP
+    {0,0,"INVALID"},        //$3B : RLA
+    {0,0,"INVALID"},        //$3C : NOP
+    {2,4,"AND $%02x%02x,X"},    //$3D : AND
+    {2,7,"ROL $%02x%02x,X"},    //$3E : ROL
+    {0,0,"INVALID"},        //$3F : RLA
 
-    {2,2}, //$50 : BVC
-    {2,5}, //$51 : EOR
-    {0,0}, //$52 : KIL
-    {0,8}, //$53 : SRE
-    {0,4}, //$54 : NOP
-    {2,4}, //$55 : EOR
-    {2,6}, //$56 : LSR
-    {0,6}, //$57 : SRE
-    {1,2}, //$58 : CLI
-    {3,4}, //$59 : EOR
-    {0,2}, //$5A : NOP
-    {0,7}, //$5B : SRE
-    {0,4}, //$5C : NOP
-    {3,4}, //$5D : EOR
-    {3,7}, //$5E : LSR
-    {0,7}, //$5F : SRE
+    {0,6,"RTI"},            //$40 : RTI
+    {1,6,"EOR ($%02x,X)"},    //$41 : EOR
+    {0,0,"INVALID"},        //$42 : KIL
+    {0,0,"INVALID"},        //$43 : SRE
+    {0,0,"INVALID"},        //$44 : NOP
+    {1,3,"EOR $%02x"},        //$45 : EOR
+    {1,5,"LSR $%02x"},        //$46 : LSR
+    {0,0,"INVALID"},        //$47 : SRE
+    {0,3,"PHA"},            //$48 : PHA
+    {1,2,"EOR #$%02x"},       //$49 : EOR
+    {0,2,"LSR A"},          //$4A : LSR
+    {0,0,"INVALID"},        //$4B : ALR
+    {2,3,"JMP $%02x%02x"},      //$4C : JMP
+    {2,4,"EOR $%02x%02x"},      //$4D : EOR
+    {2,6,"LSR $%02x%02x"},      //$4E : LSR
+    {0,0,"INVALID"},        //$4F : SRE
 
-    {1,6}, //$60 : RTS
-    {0,6}, //$61 : ADC
-    {0,0}, //$62 : KIL
-    {0,8}, //$63 : RRA
-    {0,3}, //$64 : NOP
-    {0,3}, //$65 : ADC
-    {2,5}, //$66 : ROR
-    {0,5}, //$67 : RRA
-    {1,4}, //$68 : PLA
-    {0,2}, //$69 : ADC
-    {1,2}, //$6A : ROR
-    {0,2}, //$6B : ARR
-    {3,5}, //$6C : JMP
-    {0,4}, //$6D : ADC
-    {3,6}, //$6E : ROR
-    {0,6}, //$6F : RRA
+    {1,2,"BVC %02x"},         //$50 : BVC
+    {1,5,"EOR ($%02x),Y"},    //$51 : EOR
+    {0,0,"INVALID"},        //$52 : KIL
+    {0,0,"INVALID"},        //$53 : SRE
+    {0,0,"INVALID"},        //$54 : NOP
+    {1,4,"EOR $%02x,X"},      //$55 : EOR
+    {1,6,"LSR $%02x,X"},      //$56 : LSR
+    {0,0,"INVALID"},        //$57 : SRE
+    {0,2,"CLI"},            //$58 : CLI
+    {2,4,"EOR $%02x%02x,Y"},    //$59 : EOR
+    {0,0,"INVALID"},        //$5A : NOP
+    {0,0,"INVALID"},        //$5B : SRE
+    {0,0,"INVALID"},        //$5C : NOP
+    {2,4,"EOR $%02x%02x,X"},    //$5D : EOR
+    {2,7,"LSR $%02x%02x,X"},    //$5E : LSR
+    {0,0,"INVALID"},        //$5F : SRE
 
-    {2,2}, //$70 : BVS
-    {0,5}, //$71 : ADC
-    {0,0}, //$72 : KIL
-    {0,8}, //$73 : RRA
-    {0,4}, //$74 : NOP
-    {0,4}, //$75 : ADC
-    {2,6}, //$76 : ROR
-    {0,6}, //$77 : RRA
-    {1,2}, //$78 : SEI
-    {0,4}, //$79 : ADC
-    {0,2}, //$7A : NOP
-    {0,7}, //$7B : RRA
-    {0,4}, //$7C : NOP
-    {0,4}, //$7D : ADC
-    {3,7}, //$7E : ROR
-    {0,7}, //$7F : RRA
+    {0,6,"RTS"},            //$60 : RTS
+    {1,6,"ADC ($%02x,X)"},    //$61 : ADC
+    {0,0,"INVALID"},        //$62 : KIL
+    {0,0,"INVALID"},        //$63 : RRA
+    {0,0,"INVALID"},        //$64 : NOP
+    {1,3,"ADC $%02x"},        //$65 : ADC
+    {1,5,"ROR $%02x"},        //$66 : ROR
+    {0,0,"INVALID"},        //$67 : RRA
+    {0,4,"PLA"},            //$68 : PLA
+    {1,2,"ADC #$%02x"},       //$69 : ADC
+    {0,2,"ROR A"},          //$6A : ROR
+    {0,0,"INVALID"},        //$6B : ARR
+    {2,5,"JMP ($%02x%02x)"},    //$6C : JMP
+    {2,4,"ADC $%02x%02x"},      //$6D : ADC
+    {2,6,"ROR $%02x%02x"},      //$6E : ROR
+    {0,0,"INVALID"},        //$6F : RRA
 
-    {0,2}, //$80 : NOP
-    {2,6}, //$81 : STA
-    {0,2}, //$82 : NOP
-    {0,6}, //$83 : SAX
-    {2,3}, //$84 : STY
-    {2,3}, //$85 : STA
-    {2,3}, //$86 : STX
-    {0,3}, //$87 : SAX
-    {1,2}, //$88 : DEY
-    {0,2}, //$89 : NOP
-    {1,2}, //$8A : TXA
-    {0,2}, //$8B : XAA
-    {3,4}, //$8C : STY
-    {3,4}, //$8D : STA
-    {3,4}, //$8E : STX
-    {0,4}, //$8F : SAX
+    {1,2,"BVS %02x"},         //$70 : BVS
+    {1,5,"ADC ($%02x),Y"},    //$71 : ADC
+    {0,0,"INVALID"},        //$72 : KIL
+    {0,0,"INVALID"},        //$73 : RRA
+    {0,0,"INVALID"},        //$74 : NOP
+    {1,4,"ADC $%02x,X"},      //$75 : ADC
+    {1,6,"ROR $%02x,X"},      //$76 : ROR
+    {0,0,"INVALID"},        //$77 : RRA
+    {0,2,"SEI"},            //$78 : SEI
+    {2,4,"ADC $%02x%02x,Y"},    //$79 : ADC
+    {0,0,"INVALID"},        //$7A : NOP
+    {0,0,"INVALID"},        //$7B : RRA
+    {0,0,"INVALID"},        //$7C : NOP
+    {2,4,"ADC $%02x%02x,X"},    //$7D : ADC
+    {2,7,"ROR $%02x%02x,X"},    //$7E : ROR
+    {0,0,"INVALID"},        //$7F : RRA
 
-    {2,2}, //$90 : BCC
-    {2,6}, //$91 : STA
-    {0,0}, //$92 : KIL
-    {0,6}, //$93 : AHX
-    {2,4}, //$94 : STY
-    {2,4}, //$95 : STA
-    {2,4}, //$96 : STX
-    {0,4}, //$97 : SAX
-    {1,2}, //$98 : TYA
-    {3,5}, //$99 : STA
-    {1,2}, //$9A : TXS
-    {0,5}, //$9B : TAS
-    {0,5}, //$9C : SHY
-    {3,5}, //$9D : STA
-    {3,5}, //$9E : SHX
-    {0,5}, //$9F : AHX
+    {0,0,"INVALID"},        //$80 : NOP
+    {1,6,"STA ($%02x,X)"},    //$81 : STA
+    {0,0,"INVALID"},        //$82 : NOP
+    {0,0,"INVALID"},        //$83 : SAX
+    {1,3,"STY $%02x"},        //$84 : STY
+    {1,3,"STA $%02x"},        //$85 : STA
+    {1,3,"STX $%02x"},        //$86 : STX
+    {0,0,"INVALID"},        //$87 : SAX
+    {0,2,"DEY"},            //$88 : DEY
+    {0,0,"INVALID"},        //$89 : NOP
+    {0,2,"TXA"},            //$8A : TXA
+    {0,0,"INVALID"},        //$8B : XAA
+    {2,4,"STY $%02x%02x"},      //$8C : STY
+    {2,4,"STA $%02x%02x"},      //$8D : STA
+    {2,4,"STX $%02x%02x"},      //$8E : STX
+    {0,0,"INVALID"},        //$8F : SAX
 
-    {2,2}, //$A0 : LDY
-    {2,6}, //$A1 : LDA
-    {2,2}, //$A2 : LDX
-    {0,6}, //$A3 : LAX
-    {2,3}, //$A4 : LDY
-    {2,3}, //$A5 : LDA
-    {2,3}, //$A6 : LDX
-    {0,3}, //$A7 : LAX
-    {1,2}, //$A8 : TAY
-    {2,2}, //$A9 : LDA
-    {1,2}, //$AA : TAX
-    {0,2}, //$AB : LAX
-    {3,4}, //$AC : LDY
-    {3,4}, //$AD : LDA
-    {3,4}, //$AE : LDX
-    {0,4}, //$AF : LAX
+    {1,2,"BCC %02x"},         //$90 : BCC
+    {1,6,"STA ($%02x),Y"},    //$91 : STA
+    {0,0,"INVALID"},        //$92 : KIL
+    {0,0,"INVALID"},        //$93 : AHX
+    {1,4,"STY $%02x,X"},      //$94 : STY
+    {1,4,"STA $%02x,X"},      //$95 : STA
+    {1,4,"STA $%02x,Y"},      //$96 : STX
+    {0,0,"INVALID"},        //$97 : SAX
+    {0,2,"TYA"},            //$98 : TYA
+    {2,5,"STA $%02x%02x,Y"},    //$99 : STA
+    {0,2,"TXS"},            //$9A : TXS
+    {0,0,"INVALID"},        //$9B : TAS
+    {0,0,"INVALID"},        //$9C : SHY
+    {2,5,"STA $%02x%02x,X"},    //$9D : STA
+    {0,0,"INVALID"},        //$9E : SHX
+    {0,0,"INVALID"},        //$9F : AHX
 
-    {2,2}, //$B0 : BCS
-    {2,5}, //$B1 : LDA
-    {0,0}, //$B2 : KIL
-    {0,5}, //$B3 : LAX
-    {2,4}, //$B4 : LDY
-    {2,4}, //$B5 : LDA
-    {2,4}, //$B6 : LDX
-    {0,4}, //$B7 : LAX
-    {1,2}, //$B8 : CLV
-    {3,4}, //$B9 : LDA
-    {1,2}, //$BA : TSX
-    {0,4}, //$BB : LAS
-    {3,4}, //$BC : LDY
-    {3,4}, //$BD : LDA
-    {3,4}, //$BE : LDX
-    {0,4}, //$BF : LAX
+    {1,2,"LDY #$%02x"},       //$A0 : LDY
+    {1,6,"LDA ($%02x,X)"},    //$A1 : LDA
+    {1,2,"LDX #$%02x"},       //$A2 : LDX
+    {0,0,"INVALID"},        //$A3 : LAX
+    {1,3,"LDY $%02x"},        //$A4 : LDY
+    {1,3,"LDA $%02x"},        //$A5 : LDA
+    {1,3,"LDX $%02x"},        //$A6 : LDX
+    {0,0,"INVALID"},        //$A7 : LAX
+    {0,2,"TAY"},            //$A8 : TAY
+    {1,2,"LDA #$%02x"},       //$A9 : LDA
+    {0,2,"TAX"},            //$AA : TAX
+    {0,0,"INVALID"},        //$AB : LAX
+    {2,4,"LDY $%02x%02x"},      //$AC : LDY
+    {2,4,"LDA $%02x%02x"},      //$AD : LDA
+    {2,4,"LDX $%02x%02x"},      //$AE : LDX
+    {0,0,"INVALID"},        //$AF : LAX
 
-    {2,2}, //$C0 : CPY
-    {2,6}, //$C1 : CMP
-    {0,2}, //$C2 : NOP
-    {0,8}, //$C3 : DCP
-    {2,3}, //$C4 : CPY
-    {2,3}, //$C5 : CMP
-    {2,5}, //$C6 : DEC
-    {0,5}, //$C7 : DCP
-    {1,2}, //$C8 : INY
-    {2,2}, //$C9 : CMP
-    {1,2}, //$CA : DEX
-    {0,2}, //$CB : AXS
-    {3,4}, //$CC : CPY
-    {3,4}, //$CD : CMP
-    {3,6}, //$CE : DEC
-    {0,6}, //$CF : DCP
+    {1,2,"BCS %02x"},         //$B0 : BCS
+    {1,5,"LDA ($%02x),Y"},    //$B1 : LDA
+    {0,0,"INVALID"},        //$B2 : KIL
+    {0,0,"INVALID"},        //$B3 : LAX
+    {1,4,"LDY $%02x,X"},      //$B4 : LDY
+    {1,4,"LDA $%02x,X"},      //$B5 : LDA
+    {1,4,"LDX $%02x,Y"},      //$B6 : LDX
+    {0,0,"INVALID"},        //$B7 : LAX
+    {0,2,"CLV"},            //$B8 : CLV
+    {2,4,"LDA $%02x%02x,Y"},    //$B9 : LDA
+    {0,2,"TSX"},            //$BA : TSX
+    {0,0,"INVALID"},        //$BB : LAS
+    {2,4,"LDY $%02x%02x,X"},    //$BC : LDY
+    {2,4,"LDA $%02x%02x,X"},    //$BD : LDA
+    {2,4,"LDX $%02x%02x,Y"},    //$BE : LDX
+    {0,0,"INVALID"},        //$BF : LAX
 
-    {2,2}, //$D0 : BNE
-    {2,5}, //$D1 : CMP
-    {0,0}, //$D2 : KIL
-    {0,8}, //$D3 : DCP
-    {0,4}, //$D4 : NOP
-    {2,4}, //$D5 : CMP
-    {2,6}, //$D6 : DEC
-    {0,6}, //$D7 : DCP
-    {1,2}, //$D8 : CLD
-    {3,4}, //$D9 : CMP
-    {0,2}, //$DA : NOP
-    {0,7}, //$DB : DCP
-    {0,4}, //$DC : NOP
-    {3,4}, //$DD : CMP
-    {3,7}, //$DE : DEC
-    {0,7}, //$DF : DCP
+    {1,2,"CPY #$%02x"},       //$C0 : CPY
+    {1,6,"CMP ($%02x,X)"},    //$C1 : CMP
+    {0,0,"INVALID"},        //$C2 : NOP
+    {0,0,"INVALID"},        //$C3 : DCP
+    {1,3,"CPY $%02x"},        //$C4 : CPY
+    {1,3,"CMP $%02x"},        //$C5 : CMP
+    {1,5,"DEC $%02x"},        //$C6 : DEC
+    {0,0,"INVALID"},        //$C7 : DCP
+    {0,2,"INY"},            //$C8 : INY
+    {1,2,"CMP #$%02x"},       //$C9 : CMP
+    {0,2,"DEX"},            //$CA : DEX
+    {0,0,"INVALID"},        //$CB : AXS
+    {2,4,"CPY $%02x%02x"},      //$CC : CPY
+    {2,4,"CMP $%02x%02x"},      //$CD : CMP
+    {2,6,"DEC $%02x%02x"},      //$CE : DEC
+    {0,0,"INVALID"},        //$CF : DCP
 
-    {2,2}, //$E0 : CPX
-    {2,6}, //$E1 : SBC
-    {0,2}, //$E2 : NOP
-    {0,8}, //$E3 : ISC
-    {2,3}, //$E4 : CPX
-    {2,3}, //$E5 : SBC
-    {2,5}, //$E6 : INC 
-    {0,5}, //$E7 : ISC  
-    {1,2}, //$E8 : INX
-    {2,2}, //$E9 : SBC
-    {1,2}, //$EA : NOP
-    {0,2}, //$EB : SBC
-    {3,4}, //$EC : CPX
-    {3,4}, //$ED : SBC
-    {3,6}, //$EE : INC
-    {0,6}, //$EF : ISC
+    {1,2,"BNE %02x"},         //$D0 : BNE
+    {1,5,"CMP ($%02x),Y"},    //$D1 : CMP
+    {0,0,"INVALID"},        //$D2 : KIL
+    {0,0,"INVALID"},        //$D3 : DCP
+    {0,0,"INVALID"},        //$D4 : NOP
+    {1,4,"CMP $%02x,X"},      //$D5 : CMP
+    {1,6,"DEC $%02x,X"},      //$D6 : DEC
+    {0,0,"INVALID"},        //$D7 : DCP
+    {0,2,"CLD"},            //$D8 : CLD
+    {2,4,"CMP $%02x%02x,Y"},    //$D9 : CMP
+    {0,0,"INVALID"},        //$DA : NOP
+    {0,0,"INVALID"},        //$DB : DCP
+    {0,0,"INVALID"},        //$DC : NOP
+    {2,4,"CMP $%02x%02x,X"},    //$DD : CMP
+    {2,7,"DEC $%02x%02x,X"},    //$DE : DEC
+    {0,0,"INVALID"},        //$DF : DCP
 
-    {2,2}, //$F0 : BEQ
-    {2,5}, //$F1 : SBC
-    {0,0}, //$F2 : KIL
-    {0,8}, //$F3 : ISC
-    {0,4}, //$F4 : NOP
-    {2,4}, //$F5 : SBC
-    {2,6}, //$F6 : INC
-    {0,6}, //$F7 : ISC
-    {1,2}, //$F8 : SED
-    {3,4}, //$F9 : SBC
-    {0,2}, //$FA : NOP
-    {0,7}, //$FB : ISC
-    {0,4}, //$FC : NOP
-    {3,4}, //$FD : SBC
-    {3,7}, //$FE : INC
-    {0,7}  //$FF : ISC
+    {1,2,"CPX #$%02x"},       //$E0 : CPX
+    {1,6,"SBC ($%02x,X)"},    //$E1 : SBC
+    {0,0,"INVALID"},        //$E2 : NOP
+    {0,0,"INVALID"},        //$E3 : ISC
+    {1,3,"CPX $%02x"},        //$E4 : CPX
+    {1,3,"SBC $%02x"},        //$E5 : SBC
+    {1,5,"INC $%02x"},        //$E6 : INC 
+    {0,0,"INVALID"},        //$E7 : ISC  
+    {0,2,"INX"},            //$E8 : INX
+    {1,2,"SBC #$%02x"},       //$E9 : SBC
+    {0,2,"NOP"},            //$EA : NOP
+    {0,0,"INVALID"},        //$EB : SBC
+    {2,4,"CPX $%02x%02x"},      //$EC : CPX
+    {2,4,"SBC $%02x%02x"},      //$ED : SBC
+    {2,6,"INC $%02x%02x"},      //$EE : INC
+    {0,0,"INVALID"},        //$EF : ISC
+
+    {1,2,"BEQ %02x"},         //$F0 : BEQ
+    {1,5,"SBC ($%02x),Y"},    //$F1 : SBC
+    {0,0,"INVALID"},        //$F2 : KIL
+    {0,0,"INVALID"},        //$F3 : ISC
+    {0,0,"INVALID"},        //$F4 : NOP
+    {1,4,"SBC $%02x,X"},      //$F5 : SBC
+    {1,6,"INC $%02x,X"},      //$F6 : INC
+    {0,0,"INVALID"},        //$F7 : ISC
+    {0,2,"SED"},            //$F8 : SED
+    {2,4,"SBC $%02x%02x,Y"},    //$F9 : SBC
+    {0,0,"INVALID"},        //$FA : NOP
+    {0,0,"INVALID"},        //$FB : ISC
+    {0,0,"INVALID"},        //$FC : NOP
+    {2,4,"SBC $%02x%02x,X"},    //$FD : SBC
+    {2,7,"INC $%02x,%02x,X"},   //$FE : INC
+    {0,0,"INVALID"}         //$FF : ISC
 };
 

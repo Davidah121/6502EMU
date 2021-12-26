@@ -3,25 +3,25 @@
 	"configurations": [
 		{
 			"name": "Debug Launch x64",
-			"type": "lldb",
+			"type": "cppvsdbg",
 			"request": "launch",
-			"program": "${workspaceFolder}/bin/Debug/x64/6502EMU.exe",
+			"program": "${workspaceFolder}/bin/Debug/x64/6502Emu.exe",
 			"args": [],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],
-			"terminal": "external"
+			"console": "externalTerminal"
 		},
 		{
 			"name": "Release Launch x64",
-			"type": "lldb",
+			"type": "cppvsdbg",
 			"request": "launch",
-			"program": "${workspaceFolder}/bin/Release/x64/6502EMU.exe",
+			"program": "${workspaceFolder}/bin/Release/x64/6502Emu.exe",
 			"args": [],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],
-			"terminal": "external"
+			"console": "externalTerminal"
 		}
 	]
 }

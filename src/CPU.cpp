@@ -1,5 +1,5 @@
 #include "CPU.h"
-#include <glib/StringTools.h>
+#include "StringTools.h"
 
 #define ZERO_CHECK(a) (a==0)
 #define NEGATIVE_CHECK(a) ((a & 0b10000000) != 0)
@@ -74,6 +74,13 @@ void CPU::requestReset()
     doReset = true;
 }
 
+void CPU::hardReset()
+{
+    reset();
+    cyclesJustUsed = 0;
+    totalCyclesUsed = 0;
+}
+
 unsigned short CPU::getPC()
 {
     return PC;
@@ -130,13 +137,38 @@ unsigned char CPU::getCPUFlags()
     return status;
 }
 
+std::string CPU::getNextInstructionAsString()
+{
+    unsigned char instruction = mem->getMemory(PC);
+    InstructionInfo info = CPU::OpCodes[instruction];
+    std::string asmString = "INVALID";
+    if(info.additionalBytes == 0)
+    {
+        asmString = info.syntax;
+    }
+    else if(info.additionalBytes == 1)
+    {
+        unsigned char b1 = mem->getMemory(PC+1);
+        asmString = StringTools::formatString(info.syntax, b1);
+    }
+    else if(info.additionalBytes == 2)
+    {
+        unsigned char b1 = mem->getMemory(PC+1);
+        unsigned char b2 = mem->getMemory(PC+2);
+        asmString = StringTools::formatString(info.syntax, b1, b2);
+    }
+
+    return asmString;
+}
+
 bool CPU::doInstruction()
 {
     //read first byte
     bool valid = true;
     int opcode = mem->getMemory(PC);
+    PC += 1;
     
-    int bytesToRead = CPU::OpCodes[opcode].bytes;
+    int bytesToRead = CPU::OpCodes[opcode].additionalBytes;
     int cycles = CPU::OpCodes[opcode].cycles;
 
     switch (opcode)
@@ -209,7 +241,7 @@ bool CPU::doInstruction()
         ASL(getAbsolute());
         break;
     case 0x1E:
-        ASL(getAbsoluteX(&cycles));
+        ASL(getAbsoluteX(nullptr));
         break;
     #pragma endregion
 
@@ -694,16 +726,16 @@ bool CPU::doInstruction()
         STA(getAbsolute());
         break;
     case 0x9D:
-        STA(getAbsoluteX(&cycles));
+        STA(getAbsoluteX(nullptr));
         break;
     case 0x99:
-        STA(getAbsoluteY(&cycles));
+        STA(getAbsoluteY(nullptr));
         break;
     case 0x81:
         STA(getIndirectX());
         break;
     case 0x91:
-        STA(getIndirectY(&cycles));
+        STA(getIndirectY(nullptr));
         break;
     #pragma endregion
 
@@ -784,35 +816,35 @@ bool CPU::doInstruction()
 
 byte& CPU::getImmediate()
 {
-    return mem->getMemory(PC+1);
+    return mem->getMemory(PC);
 }
 
 byte& CPU::getZeroPage()
 {
-    return mem->getMemory( mem->getMemory(PC+1) );
+    return mem->getMemory( mem->getMemory(PC) );
 }
 
 byte& CPU::getZeroPageX()
 {
-    unsigned short location = (byte)mem->getMemory(PC+1) + X;
+    unsigned short location = (byte)mem->getMemory(PC) + X;
     return mem->getMemory(location);
 }
 
 byte& CPU::getZeroPageY()
 {
-    unsigned short location = (byte)mem->getMemory(PC+1) + Y;
+    unsigned short location = (byte)mem->getMemory(PC) + Y;
     return mem->getMemory(location);
 }
 
 byte& CPU::getAbsolute()
 {
-    unsigned short location = ((int)mem->getMemory(PC+2)<<8) + mem->getMemory(PC+1);
+    unsigned short location = ((int)mem->getMemory(PC+1)<<8) + mem->getMemory(PC);
     return mem->getMemory(location);
 }
 
 byte& CPU::getAbsoluteX(int* cycles)
 {
-    unsigned short location = ((int)mem->getMemory(PC+2)<<8) + mem->getMemory(PC+1);
+    unsigned short location = ((int)mem->getMemory(PC+1)<<8) + mem->getMemory(PC);
     
     int pageNum = location/256;
     location += X;
@@ -827,7 +859,7 @@ byte& CPU::getAbsoluteX(int* cycles)
 
 byte& CPU::getAbsoluteY(int* cycles)
 {
-    unsigned short location = ((int)mem->getMemory(PC+2)<<8) + mem->getMemory(PC+1);
+    unsigned short location = ((int)mem->getMemory(PC+1)<<8) + mem->getMemory(PC);
     
     int pageNum = location/256;
     location += Y;
@@ -841,7 +873,7 @@ byte& CPU::getAbsoluteY(int* cycles)
 
 byte& CPU::getIndirectX()
 {
-    unsigned short location = mem->getMemory(PC+1);
+    unsigned short location = mem->getMemory(PC);
     location += X;
 
     return mem->getMemory(location);
@@ -849,7 +881,7 @@ byte& CPU::getIndirectX()
 
 byte& CPU::getIndirectY(int* cycles)
 {
-    unsigned short zeroPageLocation = mem->getMemory(PC+1);
+    unsigned short zeroPageLocation = mem->getMemory(PC);
     unsigned short location = ((int)mem->getMemory(zeroPageLocation+1)<<8) + mem->getMemory(zeroPageLocation);
     
     int pageNum = location/256;
@@ -864,13 +896,13 @@ byte& CPU::getIndirectY(int* cycles)
 
 unsigned short CPU::getImmediateShort()
 {
-    unsigned short location = ((int)mem->getMemory(PC+2)<<8) + mem->getMemory(PC+1);
+    unsigned short location = ((int)mem->getMemory(PC+1)<<8) + mem->getMemory(PC);
     return location;
 }
 
 unsigned short CPU::getIndirectShort()
 {
-    unsigned short location = ((int)mem->getMemory(PC+2)<<8) + mem->getMemory(PC+1);
+    unsigned short location = ((int)mem->getMemory(PC+1)<<8) + mem->getMemory(PC);
     unsigned short result = ((int)mem->getMemory(location+1)<<8) + mem->getMemory(location);
     return result;
 }
@@ -927,12 +959,20 @@ void CPU::BCC(byte value, int* cycles)
 {
     if(cFlag == false)
     {
-        (*cycles)++;
+        if(cycles!=nullptr)
+            (*cycles)++;
 
-        unsigned short location = PC+2;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
-        location += (char)value;
+        
+        //relative mode so get first byte as unsigned char and add value
+        //must have overflow
+        byte locationSubByte = location & 0xFF;
+        locationSubByte += value;
+
+        location = (location & 0xFF00) + locationSubByte;
+
         int nPageNum = location/256;
         //changed page number
         if(nPageNum!=pageNum && cycles!=nullptr)
@@ -946,9 +986,10 @@ void CPU::BCS(byte value, int* cycles)
 {
     if(cFlag == true)
     {
-        (*cycles)++;
+        if(cycles!=nullptr)
+            (*cycles)++;
         
-        unsigned short location = PC+2;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
         location += (char)value;
@@ -965,7 +1006,8 @@ void CPU::BEQ(byte value, int* cycles)
 {
     if(zFlag == true)
     {
-        (*cycles)++;
+        if(cycles!=nullptr)
+            (*cycles)++;
         
         unsigned short location = PC+1;
         
@@ -993,9 +1035,10 @@ void CPU::BMI(byte value, int* cycles)
 {
     if(nFlag == true)
     {
-        (*cycles)++;
+        if(cycles!=nullptr)
+            (*cycles)++;
         
-        unsigned short location = PC;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
         location += (char)value;
@@ -1004,7 +1047,7 @@ void CPU::BMI(byte value, int* cycles)
         if(nPageNum!=pageNum && cycles!=nullptr)
             (*cycles)++;
 
-        PC = location;
+        PC = location-1;
     }
 }
 
@@ -1012,9 +1055,10 @@ void CPU::BNE(byte value, int* cycles)
 {
     if(zFlag == false)
     {
-        (*cycles)++;
+        if(cycles!=nullptr)
+            (*cycles)++;
         
-        unsigned short location = PC;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
         location += (char)value;
@@ -1023,7 +1067,7 @@ void CPU::BNE(byte value, int* cycles)
         if(nPageNum!=pageNum && cycles!=nullptr)
             (*cycles)++;
 
-        PC = location;
+        PC = location-1;
     }
 }
 
@@ -1031,9 +1075,10 @@ void CPU::BPL(byte value, int* cycles)
 {
     if(nFlag == false)
     {
-        (*cycles)++;
+        if(cycles!=nullptr)
+            (*cycles)++;
         
-        unsigned short location = PC;
+        unsigned short location = PC+1;
         
         int pageNum = location/256;
         location += (char)value;
@@ -1042,18 +1087,13 @@ void CPU::BPL(byte value, int* cycles)
         if(nPageNum!=pageNum && cycles!=nullptr)
             (*cycles)++;
 
-        PC = location;
+        PC = location-1;
     }
 }
 
 void CPU::BRK()
 {
-    unsigned short IRQ = 0xFFFE;
-    unsigned short jmpLocation = mem->getMemory(IRQ);
-    jmpLocation = (jmpLocation<<8) + mem->getMemory(IRQ+1);
-
-    JMP(jmpLocation);
-    PHP();
+    interupt();
     bFlag = true;
     finished = true;
 }
@@ -1062,7 +1102,8 @@ void CPU::BVC(byte value, int* cycles)
 {
     if(vFlag == false)
     {
-        (*cycles)++;
+        if(cycles!=nullptr)
+            (*cycles)++;
         
         unsigned short location = PC;
         
@@ -1081,7 +1122,8 @@ void CPU::BVS(byte value, int* cycles)
 {
     if(vFlag == true)
     {
-        (*cycles)++;
+        if(cycles!=nullptr)
+            (*cycles)++;
         
         unsigned short location = PC;
         

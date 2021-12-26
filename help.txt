@@ -14,9 +14,16 @@ It is separated into the following secitions:
 /////////////// INITIALIZATION /////////////////////////
 ///////////////////////////////////////////////////////////////////
 
+Valid command options are as follows:
+-i		Sets the input file.
+-o		Sets the output file.
+-R		Runs the input files code. Assumes that the code has been assembled into binary.
+-A		Assembles the input file into binary (Experimental). Both -i and -o must be specified.
+-D		Disassembles the input file back into 6502 Assembly (Experimental). Both -i and -o must be specified.
+
 When the application initializes, the program counter (PC) for the processor is set to 0x0600.
 The stack pointer (SP) is set to 0xFF and execution starts.
-Instructions are loaded from a preset file 6502.a.
+Instructions by default are loaded from a preset file 6502.a.
 Replace the contents in the file with code that you desire to run through the emulator.
 The format should be raw binary data and not ascii strings or 6502 assembly syntaxed strings.
 This program is not a compiler or assembler.
@@ -60,6 +67,9 @@ The following commands are valid:
 	end
 	mem_dump
 	mem_view
+	irq
+	nmi
+	reset
 
 help		Opens this file
 step		Performs the next instruction. 
@@ -67,6 +77,10 @@ run		Runs the program without interruptions till completion.
 end 		Prematurely ends execution and quits the program.
 mem_dump 	Dumps all of the memory to a file called mem_dump.
 mem_view	Prints the value(s) of memory at a location or range of locations.
+irq		Sends an interupt to the cpu.
+nmi		Sends a manditory interupt to the cpu.
+reset		Sends a reset to the cpu. Does not reset the total number of cycles used.
+hard_reset	Resets both the cpu and memory and reloads the instructions. Resets the total cycles.
 
 After every command, the command prompt is cleared.
 
@@ -74,14 +88,5 @@ After every command, the command prompt is cleared.
 /////////////// KNOWN ISSUES //////////////////////////
 ///////////////////////////////////////////////////////////////////
 
-The command prompt is cleared using cls which is not cross platform.
-	It will fail to work on other platforms unless changed.
-	The command pause is similar in nature.
-
-The application when run through VSCode using lldb as a debugger freaks out due
-to using cls.
-
-The application is dependant on GLIB however that is easy to change at the current state
-	due to it just using simple functions or wrappers.
-
 No support for the decimal flag.
+The assembler can not deal with labels properly.

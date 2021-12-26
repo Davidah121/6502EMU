@@ -13,3 +13,4 @@ build $objDir/6502Emu.o: buildToObject src/6502Emu.cpp
 build $objDir/CPU.o: buildToObject src/CPU.cpp
 build $objDir/CPU_Opcodes.o: buildToObject src/CPU_Opcodes.cpp
 build $objDir/Memory.o: buildToObject src/Memory.cpp
+build $objDir/Assembler.o: buildToObject src/Assembler.cpp

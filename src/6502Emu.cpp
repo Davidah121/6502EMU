@@ -4,47 +4,81 @@
 #include <glib/System.h>
 #include <glib/BitmapFont.h>
 #include "CPU.h"
+#include "Assembler.h"
 
 bool step = false;
 bool stepContinue = false;
 
 int hexStringToInt(std::string x)
 {
-    int value = 0;
-    for(unsigned char a : x)
+    std::vector<std::string> instructions;
+
+    SimpleFile f = SimpleFile(inputFile, SimpleFile::READ);
+    if(f.isOpen())
     {
-        value = value << 4;
-        if(a>='0' && a<='9')
-        {
-            value |= a-'0';
-        }
-        else if(a >= 'A' && a <= 'F')
-        {
-            value |= (a-'A')+10;
-        }
-        else if(a >= 'a' && a <= 'f')
-        {
-            value |= (a-'a')+10;
-        }
-        else
-        {
-            break;
-        }
+        instructions = f.readAllStrings();
+        f.close();
     }
 
-    return value;
+    std::string errorMessage = "";
+    std::vector<unsigned char> outputBinary = Assembler::convertToBinary(instructions, errorMessage);
+
+    if(errorMessage != "")
+    {
+        StringTools::println("ERROR HAS OCCURED.");
+        StringTools::println(errorMessage);
+    }
+    else
+    {
+        SimpleFile f2 = SimpleFile(outputFile, SimpleFile::WRITE);
+        if(f2.isOpen())
+        {
+            f2.writeBytes(outputBinary.data(), outputBinary.size());
+            f2.close();
+        }
+    }
 }
 
-void loadInstructionsIntoMemory(Memory* mem)
+void disassembleCode(std::string inputFile, std::string outputFile)
+{
+    std::vector<unsigned char> binaryCode;
+
+    SimpleFile f = SimpleFile(inputFile, SimpleFile::READ);
+    if(f.isOpen())
+    {
+        binaryCode = f.readAllBytes();
+        f.close();
+    }
+
+    std::vector<std::string> outputBinary = Assembler::convertToAsm(binaryCode);
+
+    SimpleFile f2 = SimpleFile(outputFile, SimpleFile::WRITE);
+    if(f2.isOpen())
+    {
+        for(int i=0; i<outputBinary.size(); i++)
+        {
+            f2.writeBytes(outputBinary[i].data(), outputBinary[i].size());
+            f2.writeByte('\n');
+        }
+        f2.close();
+    }
+}
+
+bool loadInstructionsIntoMemory(Memory* mem)
 {
     int location = 0x600;
     std::vector<unsigned char> instructions;
 
-    SimpleFile f = SimpleFile("6502.a", SimpleFile::ASCII | SimpleFile::READ);
+    SimpleFile f = SimpleFile(inputInstructions, SimpleFile::READ);
     if(f.isOpen())
     {
-        instructions = f.readFullFileAsBytes();
+        instructions = f.readAllBytes();
         f.close();
+    }
+    else
+    {
+        StringTools::println("ERROR LOADING INSTRUCTIONS from file %s", inputInstructions.c_str());
+        return false;
     }
 
     for(unsigned char a : instructions)
@@ -52,11 +86,12 @@ void loadInstructionsIntoMemory(Memory* mem)
         mem->setMemory(location, a);
         location++;
     }
+    return true;
 }
 
 void mem_dump(Memory* mem)
 {
-    SimpleFile f = SimpleFile("mem_dump", SimpleFile::ASCII | SimpleFile::WRITE);
+    SimpleFile f = SimpleFile("mem_dump", SimpleFile::WRITE);
     if(f.isOpen())
     {
         f.writeBytes(mem->getDataPointer(0), mem->getSize());
@@ -76,13 +111,13 @@ void mem_view(Memory* mem)
 
     if(values.size()==1)
     {
-        location1 = hexStringToInt(values[0]);
+        location1 = StringTools::hexStringToInt(values[0]);
         location2 = location1;
     }
     else if(values.size()==2)
     {
-        location1 = hexStringToInt(values[0]);
-        location2 = hexStringToInt(values[1]);
+        location1 = StringTools::hexStringToInt(values[0]);
+        location2 = StringTools::hexStringToInt(values[1]);
 
         StringTools::println("%d, %d", location1, location2);
     }
@@ -327,68 +362,133 @@ void run(bool debugMode)
 {
     Memory k = Memory(1);
 
-    loadInstructionsIntoMemory(&k);
+    bool valid = loadInstructionsIntoMemory(&k);
 
     k.setMemory(0xFFFC, 0x00);
     k.setMemory(0xFFFD, 0x06);
     
     CPU cpu = CPU(&k);
 
-    if(!debugMode)
+    if(!valid)
     {
-        while(!cpu.getFinished())
-        {
-            cpu.step();
-        }
+        return;
     }
-    else
-    {
-        while(true)
-        {
-            StringTools::println("totalCycles: %d \t lastCycles: %d", cpu.getTotalCyclesUsed(), cpu.getCyclesJustUsed());
-            StringTools::println("PC: %x \t SP: %x", cpu.getPC(), cpu.getSP());
-            StringTools::println("A: %x \t X: %x \t Y: %x", cpu.getA(), cpu.getX(), cpu.getY());
-            StringTools::println("Flags: NV-BDIZC");
-            StringTools::println("       %s", StringTools::toBinaryString(cpu.getCPUFlags(), 8));
-            
-            StringTools::print("Enter Commands: ");
-            std::string command = StringTools::getString();
 
-            if(command == "help")
+
+    while(true)
+    {
+        StringTools::println("totalCycles: %d \t lastCycles: %d", cpu.getTotalCyclesUsed(), cpu.getCyclesJustUsed());
+        StringTools::println("PC: %x \t SP: %x", cpu.getPC(), cpu.getSP());
+        StringTools::println("A: %x \t X: %x \t Y: %x", cpu.getA(), cpu.getX(), cpu.getY());
+        StringTools::println("Flags: NV-BDIZC");
+        StringTools::println("       %s", StringTools::toBinaryString(cpu.getCPUFlags(), 8));
+
+        StringTools::println("");
+        StringTools::println("Next Instruction: %s", cpu.getNextInstructionAsString().c_str());
+        
+        StringTools::print("Enter Commands: ");
+        std::string command = StringTools::getString();
+
+        if(command == "help")
+        {
+            system("start help.txt");
+        }
+        else if(command == "step")
+        {
+            if(!cpu.getFinished())
+                cpu.step();
+            else
+                StringTools::println("Program can no longer be executed.");
+        }
+        else if(command == "run")
+        {
+            while(!cpu.getFinished())
             {
-                system("start help.txt");
+                cpu.step();
             }
-            else if(command == "step")
+            StringTools::println("Program finished execution");
+            system("pause");
+        }
+        else if(command == "end")
+        {
+            StringTools::println("Ending Execution");
+            break;
+        }
+        else if(command == "mem_dump")
+        {
+            StringTools::println("Dumping memory to file mem_dump");
+            mem_dump(&k);
+            system("pause");
+        }
+        else if(command == "mem_view")
+        {
+            mem_view(&k);
+            system("pause");
+        }
+        else if(command == "irq")
+        {
+            cpu.requestInterupt();
+        }
+        else if(command == "nmi")
+        {
+            cpu.requestManditoryInterupt();
+        }
+        else if(command == "reset")
+        {
+            cpu.requestReset();
+        }
+        else if(command == "hard_reset")
+        {
+            k.reset();
+            loadInstructionsIntoMemory(&k);
+            cpu.hardReset();
+        }
+
+        StringTools::clearConsole(true);
+    }
+    
+}
+
+int main(int argc, char** argv)
+{
+    if(argc > 1)
+    {
+        std::string inputFile = "";
+        std::string outputFile = "";
+        int type = 0;
+        int index = 1;
+
+        while(index < argc)
+        {
+            std::string arg = argv[index];
+            if(arg == "-i")
             {
-                if(!cpu.getFinished())
-                    cpu.step();
-                else
-                    StringTools::println("Program can no longer be executed.");
+                inputFile = argv[index+1];
+                index+=2;
             }
-            else if(command == "run")
+            else if(arg == "-o")
             {
-                while(!cpu.getFinished())
-                {
-                    cpu.step();
-                }
-                StringTools::println("Program finished execution");
-                system("pause");
+                outputFile = argv[index+1];
+                index+=2;
             }
-            else if(command == "end")
+            else if(arg == "-R")
             {
-                StringTools::println("Ending Execution");
-                break;
+                type = 0;
+                index++;
             }
-            else if(command == "mem_dump")
+            else if(arg == "-A")
             {
-                StringTools::println("Dumping memory to file mem_dump");
-                mem_dump(&k);
-                system("pause");
+                type = 1;
+                index++;
             }
-            else if(command == "mem_view")
+            else if(arg == "-D")
             {
-                mem_view(&k);
-                system("pause");
+                type = 2;
+                index++;
+            }
+            else
+            {
+                index++;
             }
             else if(command == "irq")
             {
@@ -403,7 +503,32 @@ void run(bool debugMode)
                 cpu.requestReset();
             }
 
-            system("cls");
+        if(type == 0)
+        {
+            //run a program
+            if(inputFile != "")
+            {
+                inputInstructions = inputFile;
+            }
+            run();
+        }
+        else
+        {
+            if(inputFile!="" && outputFile!="")
+            {
+                if(type == 1)
+                {
+                    assembleCode(inputFile, outputFile);
+                }
+                else if(type == 2)
+                {
+                    disassembleCode(inputFile, outputFile);
+                }
+            }
+            else
+            {
+                StringTools::println("Must specify input and output file to assemble or disassemble code");
+            }
         }
     }
 }
