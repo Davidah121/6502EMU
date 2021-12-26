@@ -7,8 +7,9 @@
 CPU::CPU(Memory* k)
 {
     mem = k;
-    PC = 0xFFFC;
-    SP = 0xFF;
+    reset();
+    cyclesJustUsed = 0;
+    totalCyclesUsed = 0;
 }
 
 CPU::~CPU()
@@ -1446,7 +1447,8 @@ void CPU::interupt()
         PHP();
 
         PC = 0xFFFE;
-        PC = getImmediateShort();
+        PC = mem->getMemory(PC+1);
+        PC = (PC<<8) + mem->getMemory(PC);
 
         cyclesJustUsed = 7;
         totalCyclesUsed += 7;
@@ -1465,7 +1467,8 @@ void CPU::interuptManditory()
     PHP();
 
     PC = 0xFFFA;
-    PC = getImmediateShort();
+    PC = mem->getMemory(PC+1);
+    PC = (PC<<8) + mem->getMemory(PC);
 
     cyclesJustUsed = 8;
     totalCyclesUsed += 8;
@@ -1487,7 +1490,8 @@ void CPU::reset()
     nFlag = 0;
 
     //set PC to whatever is at 0xFFFC
-    PC = getImmediateShort();
+    PC = mem->getMemory(PC+1);
+    PC = (PC<<8) + mem->getMemory(PC);
 
     cyclesJustUsed = 8;
     totalCyclesUsed += 8;
