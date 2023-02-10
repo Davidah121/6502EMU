@@ -3,7 +3,7 @@ Version 0.1
 Last Modified 05-05-2021
 
 This document outlines all information regarding the 6502 Emu application pertaining to its functionality.
-	Note that 6502 Emu is a branch from the NESEMU project which is an NES emulator.
+	Note that 6502 Emu is intended to be apart of the NESEMU project which is an NES emulator.
 It is separated into the following secitions:
 	INITIALIZATION
 	MEMORY
@@ -21,12 +21,11 @@ Valid command options are as follows:
 -A		Assembles the input file into binary (Experimental). Both -i and -o must be specified.
 -D		Disassembles the input file back into 6502 Assembly (Experimental). Both -i and -o must be specified.
 
-When the application initializes, the program counter (PC) for the processor is set to 0x0600.
+When the application initializes, the program counter (PC) for the processor is set to 0xFFFC.
 The stack pointer (SP) is set to 0xFF and execution starts.
+Note that by default, 0xFFFC and 0xFFFD contain 0x0600 so that the program counter jumps to 0x0600 where instructions start.
 Instructions by default are loaded from a preset file 6502.a.
-Replace the contents in the file with code that you desire to run through the emulator.
 The format should be raw binary data and not ascii strings or 6502 assembly syntaxed strings.
-This program is not a compiler or assembler.
 
 /////////////////////////////////////////////////////////////////////
 /////////////// MEMORY ////////////////////////////////////
@@ -89,4 +88,3 @@ After every command, the command prompt is cleared.
 ///////////////////////////////////////////////////////////////////
 
 No support for the decimal flag.
-The assembler can not deal with labels properly.
